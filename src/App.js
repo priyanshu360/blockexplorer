@@ -3,26 +3,16 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import LiveView from './components/LiveView';
 import { ethers } from "ethers";
+import { Network, Alchemy } from "alchemy-sdk";
 import Table from './components/Table';
 
-// Refer to the README doc for more information about using API
-// keys in client-side code. You should never do this in production
-// level code.
-// const settings = {
-//   apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
-//   network: Network.ETH_MAINNET,
-// };
+const settings = {
+  apiKey: "Tj8ielOXj0p9G4QIndE8",
+  network: Network.ETH_MAINNET,
+};
 
-
-// In this week's lessons we used ethers.js. Here we are using the
-// Alchemy SDK is an umbrella library with several different packages.
-//
-// You can read more about the packages here:
-//   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
-
-const provider = new ethers.getDefaultProvider("https://eth-mainnet.g.alchemy.com/v2/Tj8ielOXj0p9oG4QIndE8");
-
-// const provider = new AlchemyProvider('mainnet', 'your-api-key');
+const alchemy = new Alchemy(settings);
+const provider = new ethers.getDefaultProvider("https://eth-mainnet.g.alchemy.com/v2/Tj8ielOXj0p9G4QIndE8");
 
 
 
@@ -58,29 +48,38 @@ function App() {
       console.log(blocks);
     }
 
+    async function getEtherPrice() {
+      try {
+        const price = await alchemy.core.getEtherPrice();
+        setEtherPrice(price);
+      } catch (error) {
+        console.error('Error fetching ether price:', error);
+      }
+    }
+
+    async function getMarketCap() {
+      try {
+        const cap = await alchemy.core.getMarketCapitalization();
+        setMarketCap(cap);
+      } catch (error) {
+        console.error('Error fetching market cap:', error);
+      }
+    }
+
+    async function getTransactionsCount() {
+      try {
+        const count = await alchemy.core.getTransactionCount();
+        setTransactionsCount(count);
+      } catch (error) {
+        console.error('Error fetching transactions count:', error);
+      }
+    }
+
     fetchBlocks();
+    Promise.all([getEtherPrice(), getMarketCap(), getTransactionsCount()])
+      .then(() => setLoading(false))
+      .catch((error) => console.error('Error fetching data:', error));
   }, []);
-
-  // useEffect(() => {
-  // async function getEtherPrice() {
-  //   const price = await alchemy.core.getEtherPrice();
-  //   setEtherPrice(price);
-  // }
-  //
-  // async function getMarketCap() {
-  //   const cap = await alchemy.core.getMarketCapitalization();
-  //   setMarketCap(cap);
-  // }
-  //
-  // async function getTransactionsCount() {
-  //   const count = await alchemy.core.getTransactionCount();
-  //   setTransactionsCount(count);
-  // }
-
-  //   Promise.all([getEtherPrice(), getMarketCap(), getTransactionsCount()])
-  //     .then(() => setLoading(false))
-  //     .catch((error) => console.error('Error fetching data:', error));
-  // }, []);
 
   return (
     <>
