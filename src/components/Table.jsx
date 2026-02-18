@@ -1,4 +1,4 @@
-function Table({ data }) {
+function Table({ data, onRowClick }) {
 	return (
 		<section className="max-w-5xl mx-auto mt-12 px-4">
 			<h2 className="text-2xl font-bold text-gray-800 mb-4">Recent Blocks</h2>
@@ -10,7 +10,11 @@ function Table({ data }) {
 				</div>
 				{
 					data.map((item, index) => (
-						<div key={index} className="flex p-4 border-b hover:bg-gray-50">
+						<div 
+							key={index} 
+							onClick={() => onRowClick && onRowClick(item.k1)}
+							className="flex p-4 border-b hover:bg-gray-50 cursor-pointer"
+						>
 							<span className="flex-1 font-medium text-indigo-600">#{item.k1.toLocaleString()}</span>
 							<span className="flex-1 text-gray-600 font-mono text-sm truncate">{item.k2}</span>
 							<span className="flex-1 text-gray-600">{item.k3}</span>

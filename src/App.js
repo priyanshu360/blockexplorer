@@ -26,6 +26,7 @@ function App() {
   const [searchResult, setSearchResult] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [selectedBlock, setSelectedBlock] = useState(null);
 
   useEffect(() => {
     async function fetchBlocks() {
@@ -123,6 +124,25 @@ function App() {
     setSearchLoading(false);
   };
 
+  const viewBlock = async (blockNumber) => {
+    setSearchLoading(true);
+    try {
+      const block = await provider.getBlock(blockNumber);
+      if (block) {
+        setSelectedBlock(block);
+        setSearchResult(null);
+      }
+    } catch (error) {
+      console.error('Error fetching block:', error);
+    }
+    setSearchLoading(false);
+  };
+
+  const clearSelection = () => {
+    setSelectedBlock(null);
+    setSearchResult(null);
+  };
+
   return (
     <>
       <Navbar />
@@ -174,12 +194,57 @@ function App() {
         </section>
       )}
       
+      {selectedBlock && (
+        <section className="max-w-5xl mx-auto mt-8 px-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Block #{selectedBlock.number}</h2>
+              <button onClick={clearSelection} className="text-gray-500 hover:text-gray-700">✕ Close</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Hash</p>
+                <p className="font-mono text-sm break-all">{selectedBlock.hash}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Parent Hash</p>
+                <p className="font-mono text-sm break-all">{selectedBlock.parentHash}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Miner</p>
+                <p className="font-mono text-sm break-all">{selectedBlock.miner}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Timestamp</p>
+                <p>{new Date(selectedBlock.timestamp * 1000).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Transactions</p>
+                <p>{selectedBlock.transactions.length}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Gas Used</p>
+                <p>{selectedBlock.gasUsed.toString()}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Gas Limit</p>
+                <p>{selectedBlock.gasLimit.toString()}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Difficulty</p>
+                <p>{selectedBlock.difficulty.toString()}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+      
       <LiveView etherPrice={etherPrice} marketCap={marketCap} transactions={transactionsCount} loading={loading} />
       <Table data={blocks.map((block) => ({
         k1: block.number,
         k2: block.miner,
         k3: block.transactions.length
-      }))} />
+      }))} onRowClick={viewBlock} />
       <div className="App">Block Number: {blockNumber}</div>
     </>
   )
