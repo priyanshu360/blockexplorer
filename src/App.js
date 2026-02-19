@@ -27,6 +27,7 @@ function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   useEffect(() => {
     async function fetchBlocks() {
@@ -140,7 +141,23 @@ function App() {
 
   const clearSelection = () => {
     setSelectedBlock(null);
+    setSelectedTransaction(null);
     setSearchResult(null);
+  };
+
+  const viewTransaction = async (txHash) => {
+    setSearchLoading(true);
+    try {
+      const tx = await provider.getTransaction(txHash);
+      if (tx) {
+        setSelectedTransaction(tx);
+        setSelectedBlock(null);
+        setSearchResult(null);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction:', error);
+    }
+    setSearchLoading(false);
   };
 
   return (
@@ -219,10 +236,6 @@ function App() {
                 <p>{new Date(selectedBlock.timestamp * 1000).toLocaleString()}</p>
               </div>
               <div>
-                <p className="font-semibold text-gray-600 text-sm">Transactions</p>
-                <p>{selectedBlock.transactions.length}</p>
-              </div>
-              <div>
                 <p className="font-semibold text-gray-600 text-sm">Gas Used</p>
                 <p>{selectedBlock.gasUsed.toString()}</p>
               </div>
@@ -233,6 +246,91 @@ function App() {
               <div>
                 <p className="font-semibold text-gray-600 text-sm">Difficulty</p>
                 <p>{selectedBlock.difficulty.toString()}</p>
+              </div>
+            </div>
+            
+            {selectedBlock.transactions.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-700 mb-2">Transactions ({selectedBlock.transactions.length})</h3>
+                <div className="max-h-60 overflow-y-auto border rounded">
+                  {selectedBlock.transactions.slice(0, 10).map((tx, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => viewTransaction(tx)}
+                      className="p-2 border-b hover:bg-gray-50 cursor-pointer font-mono text-sm truncate"
+                    >
+                      {tx}
+                    </div>
+                  ))}
+                  {selectedBlock.transactions.length > 10 && (
+                    <div className="p-2 text-gray-500 text-center">
+                      +{selectedBlock.transactions.length - 10} more transactions
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+      
+      {selectedTransaction && (
+        <section className="max-w-5xl mx-auto mt-8 px-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Transaction Details</h2>
+              <button onClick={clearSelection} className="text-gray-500 hover:text-gray-700">✕ Close</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Hash</p>
+                <p className="font-mono text-sm break-all">{selectedTransaction.hash}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">From</p>
+                  <p className="font-mono text-sm break-all">{selectedTransaction.from}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">To</p>
+                  <p className="font-mono text-sm break-all">{selectedTransaction.to}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Value</p>
+                  <p>{ethers.formatEther(selectedTransaction.value)} ETH</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Gas Price</p>
+                  <p>{ethers.formatUnits(selectedTransaction.gasPrice, 'gwei')} Gwei</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Block Number</p>
+                  <p className="text-indigo-600 font-medium">#{selectedTransaction.blockNumber}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Transaction Index</p>
+                  <p>{selectedTransaction.index}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Gas Limit</p>
+                  <p>{selectedTransaction.gasLimit.toString()}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600 text-sm">Nonce</p>
+                  <p>{selectedTransaction.nonce}</p>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Input Data</p>
+                <p className="font-mono text-xs bg-gray-100 p-2 rounded break-all">
+                  {selectedTransaction.data === '0x' ? '(No data)' : selectedTransaction.data}
+                </p>
               </div>
             </div>
           </div>
