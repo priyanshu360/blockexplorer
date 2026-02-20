@@ -28,6 +28,8 @@ function App() {
   const [searchError, setSearchError] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [addressTxs, setAddressTxs] = useState([]);
 
   useEffect(() => {
     async function fetchBlocks() {
@@ -142,6 +144,7 @@ function App() {
   const clearSelection = () => {
     setSelectedBlock(null);
     setSelectedTransaction(null);
+    setSelectedAddress(null);
     setSearchResult(null);
   };
 
@@ -152,10 +155,34 @@ function App() {
       if (tx) {
         setSelectedTransaction(tx);
         setSelectedBlock(null);
+        setSelectedAddress(null);
         setSearchResult(null);
       }
     } catch (error) {
       console.error('Error fetching transaction:', error);
+    }
+    setSearchLoading(false);
+  };
+
+  const viewAddress = async (address) => {
+    setSearchLoading(true);
+    try {
+      const balance = await provider.getBalance(address);
+      const txCount = await provider.getTransactionCount(address);
+      const blockNumber = await provider.getBlockNumber();
+      
+      const history = await provider.getHistory({
+        address: address,
+        fromBlock: Math.max(0, blockNumber - 1000),
+        toBlock: blockNumber
+      });
+      
+      setSelectedAddress({ address, balance, txCount, history: history.slice(0, 20) });
+      setSelectedBlock(null);
+      setSelectedTransaction(null);
+      setSearchResult(null);
+    } catch (error) {
+      console.error('Error fetching address:', error);
     }
     setSearchLoading(false);
   };
@@ -289,11 +316,21 @@ function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="font-semibold text-gray-600 text-sm">From</p>
-                  <p className="font-mono text-sm break-all">{selectedTransaction.from}</p>
+                  <p 
+                    className="font-mono text-sm break-all text-indigo-600 cursor-pointer hover:underline"
+                    onClick={() => viewAddress(selectedTransaction.from)}
+                  >
+                    {selectedTransaction.from}
+                  </p>
                 </div>
                 <div>
                   <p className="font-semibold text-gray-600 text-sm">To</p>
-                  <p className="font-mono text-sm break-all">{selectedTransaction.to}</p>
+                  <p 
+                    className="font-mono text-sm break-all text-indigo-600 cursor-pointer hover:underline"
+                    onClick={() => viewAddress(selectedTransaction.to)}
+                  >
+                    {selectedTransaction.to}
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -333,6 +370,55 @@ function App() {
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+      )}
+      
+      {selectedAddress && (
+        <section className="max-w-5xl mx-auto mt-8 px-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Address Details</h2>
+              <button onClick={clearSelection} className="text-gray-500 hover:text-gray-700">✕ Close</button>
+            </div>
+            <div className="mb-6">
+              <p className="font-semibold text-gray-600 text-sm">Address</p>
+              <p className="font-mono text-sm break-all">{selectedAddress.address}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Balance</p>
+                <p className="text-2xl font-bold">{ethers.formatEther(selectedAddress.balance)} ETH</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">Transaction Count</p>
+                <p className="text-2xl font-bold">{selectedAddress.txCount}</p>
+              </div>
+            </div>
+            
+            {selectedAddress.history.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">Recent Transactions ({selectedAddress.history.length})</h3>
+                <div className="border rounded overflow-hidden">
+                  {selectedAddress.history.map((tx, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => viewTransaction(tx.hash)}
+                      className="p-3 border-b hover:bg-gray-50 cursor-pointer"
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-mono text-sm text-indigo-600 truncate">{tx.hash}</span>
+                        <span className="text-gray-500 text-sm">#{tx.blockNumber}</span>
+                      </div>
+                      <div className="flex justify-between mt-1 text-sm text-gray-600">
+                        <span>{tx.from === selectedAddress.address ? 'Out' : 'In'}</span>
+                        <span>{ethers.formatEther(tx.value)} ETH</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
