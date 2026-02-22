@@ -29,6 +29,7 @@ function App() {
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [addressTxs, setAddressTxs] = useState([]);
 
   useEffect(() => {
@@ -86,6 +87,29 @@ function App() {
     Promise.all([getEtherPrice(), getMarketCap(), getTransactionsCount()])
       .then(() => setLoading(false))
       .catch((error) => console.error('Error fetching data:', error));
+  }, []);
+
+  const refreshBlocks = async () => {
+    try {
+      const latest = await provider.getBlockNumber();
+      const N = 5;
+      const blockNumbers = Array.from(
+        { length: N },
+        (_, i) => latest - i
+      );
+      const blocksData = await Promise.all(
+        blockNumbers.map((number) => provider.getBlock(number))
+      );
+      setBlocks(blocksData);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing blocks:', error);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(refreshBlocks, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSearch = async (query) => {
@@ -424,12 +448,29 @@ function App() {
       )}
       
       <LiveView etherPrice={etherPrice} marketCap={marketCap} transactions={transactionsCount} loading={loading} />
-      <Table data={blocks.map((block) => ({
-        k1: block.number,
-        k2: block.miner,
-        k3: block.transactions.length
-      }))} onRowClick={viewBlock} />
-      <div className="App">Block Number: {blockNumber}</div>
+      <section className="max-w-5xl mx-auto mt-12 px-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Recent Blocks</h2>
+          <div className="flex items-center gap-4">
+            {lastUpdated && (
+              <span className="text-sm text-gray-500">
+                Updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+            <button 
+              onClick={refreshBlocks}
+              className="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+        <Table data={blocks.map((block) => ({
+          k1: block.number,
+          k2: block.miner,
+          k3: block.transactions.length
+        }))} onRowClick={viewBlock} />
+      </section>
     </>
   )
 }
