@@ -34,7 +34,7 @@ function App() {
 
       try {
         console.log('Fetching blocks...');
-        const blocksData = await getBlocks(provider, 5);
+        const blocksData = await getBlocks(provider, 20);
         console.log('Blocks:', blocksData);
         setBlocks(blocksData);
 
@@ -49,7 +49,7 @@ function App() {
         setTransactionsCount(blockNumber);
 
         console.log('Fetching recent transactions...');
-        const txs = await getRecentTransactions(provider, 10);
+        const txs = await getRecentTransactions(provider, 20);
         const formattedTxs = txs.map(tx => ({
           ...tx,
           value: ethers.formatEther(tx.value)
@@ -69,8 +69,16 @@ function App() {
 
   const refreshBlocks = async () => {
     try {
-      const blocksData = await getBlocks(provider, 5);
+      const [blocksData, txs] = await Promise.all([
+        getBlocks(provider, 20),
+        getRecentTransactions(provider, 20)
+      ]);
       setBlocks(blocksData);
+      const formattedTxs = txs.map(tx => ({
+        ...tx,
+        value: ethers.formatEther(tx.value)
+      }));
+      setRecentTransactions(formattedTxs);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error refreshing blocks:', error);
@@ -381,8 +389,8 @@ function App() {
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Table data={blocks} onRowClick={viewBlock} type="blocks" />
-          <Table data={recentTransactions} onRowClick={viewTransaction} type="transactions" />
+          <Table data={blocks} onRowClick={viewBlock} type="blocks" itemsPerPage={10} />
+          <Table data={recentTransactions} onRowClick={viewTransaction} type="transactions" itemsPerPage={10} />
         </div>
       </section>
     </>

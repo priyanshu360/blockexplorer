@@ -31,5 +31,8 @@ export const getRecentTransactions = async (provider, count = 10) => {
   const block = await provider.getBlock(latestBlock, true);
   const txHashes = block.transactions.slice(0, count);
   const txs = await Promise.all(txHashes.map(hash => provider.getTransaction(hash)));
-  return txs;
+  return txs.map(tx => ({
+    ...tx,
+    timestamp: block.timestamp
+  }));
 };
