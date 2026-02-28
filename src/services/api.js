@@ -26,13 +26,30 @@ export const getTransactionCount = async (provider, address) => {
   return provider.getTransactionCount(address);
 };
 
-export const getRecentTransactions = async (provider, count = 10) => {
+export const getRecentTransactions = async (provider, count = 100) => {
   const latestBlock = await provider.getBlockNumber();
-  const block = await provider.getBlock(latestBlock, true);
-  const txHashes = block.transactions.slice(0, count);
-  const txs = await Promise.all(txHashes.map(hash => provider.getTransaction(hash)));
-  return txs.map(tx => ({
-    ...tx,
-    timestamp: block.timestamp
-  }));
+  const allTxs = [];
+  let blockOffset = 0;
+  
+  while (allTxs.length < count) {
+    const blockNumber = latestBlock - blockOffset;
+    try {
+      const block = await provider.getBlock(blockNumber, true);
+      if (block && block.transactions) {
+        const txHashes = block.transactions.slice(0, count - allTxs.length);
+        const txs = await Promise.all(txHashes.map(hash => provider.getTransaction(hash)));
+        txs.forEach(tx => {
+          if (tx) {
+            allTxs.push({ ...tx, timestamp: block.timestamp });
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Error fetching block:', blockNumber, e);
+    }
+    blockOffset++;
+    if (blockOffset > 50) break;
+  }
+  
+  return allTxs.slice(0, count);
 };

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 
-function Table({ data, onRowClick, type = 'blocks', itemsPerPage = 10 }) {
+function Table({ data, onRowClick, type = 'blocks', itemsPerPage = 5 }) {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	const truncate = (str, startChars = 6, endChars = 4) => {

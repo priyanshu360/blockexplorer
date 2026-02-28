@@ -34,7 +34,7 @@ function App() {
 
       try {
         console.log('Fetching blocks...');
-        const blocksData = await getBlocks(provider, 20);
+        const blocksData = await getBlocks(provider, 100);
         console.log('Blocks:', blocksData);
         setBlocks(blocksData);
 
@@ -49,7 +49,7 @@ function App() {
         setTransactionsCount(blockNumber);
 
         console.log('Fetching recent transactions...');
-        const txs = await getRecentTransactions(provider, 20);
+        const txs = await getRecentTransactions(provider, 100);
         const formattedTxs = txs.map(tx => ({
           ...tx,
           value: ethers.formatEther(tx.value)
@@ -70,8 +70,8 @@ function App() {
   const refreshBlocks = async () => {
     try {
       const [blocksData, txs] = await Promise.all([
-        getBlocks(provider, 20),
-        getRecentTransactions(provider, 20)
+        getBlocks(provider, 100),
+        getRecentTransactions(provider, 100)
       ]);
       setBlocks(blocksData);
       const formattedTxs = txs.map(tx => ({
